@@ -1,0 +1,23 @@
+{
+  "name": "Order insights",
+  "short_name": "Order-Insights",
+  "display": "standalone",
+  "start_url": "/",
+  "theme_color": "#ccbca2",
+  "background_color": "#ffffff",
+  "ms_tile_color": "#fffffff",
+  "apple_mobile_web_app_capable": "yes",
+  "apple_mobile_web_app_status_bar_style": "black-translucent",
+  "icons": [
+    {
+      "src": "favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
