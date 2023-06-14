@@ -1,0 +1,79 @@
+image: node:16
+
+# This folder is cached between builds
+# https://docs.gitlab.com/ee/ci/yaml/index.html#cache
+cache:
+  paths:
+    - node_modules/
+
+stages:
+  - build
+  - deploy_test
+  - deploy_prod
+build:
+  stage: build
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules/
+  script:
+    # Install dependencies
+    - yarn
+    # Run lint test
+    - yarn lint
+  only:
+    - main
+  allow_failure: false
+
+deploy_test:
+  stage: deploy_test
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules
+    policy: pull
+  script:
+    # Install AWS CLI
+    - apt-get install -y curl unzip
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - export AWS_DEFAULT_REGION=${DEPLOY_AWS_REGION}
+    - cp .env.test .env
+    # Build
+    - CI=false yarn && yarn build
+    # Sync to S3
+    - aws s3 sync build s3://${TEST_AWS_SITE_BUCKET}
+    - aws cloudfront create-invalidation --distribution-id EUTQSQCAP4SUX --paths "/index.html" "/service-worker.js" "/static/js/*" "/static/css/*"
+  only:
+    - main
+  allow_failure: false
+
+deploy_prod:
+  stage: deploy_prod
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules
+    policy: pull
+  script:
+    # Install AWS CLI
+    - apt-get install -y curl unzip
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    - export AWS_DEFAULT_REGION=${DEPLOY_AWS_REGION}
+    - cp .env.test .env
+    # Build
+    - CI=false yarn && yarn build
+    # Sync to S3
+    - aws s3 sync build s3://${PROD_AWS_SITE_BUCKET}
+    - aws cloudfront create-invalidation --distribution-id E334O6FMCAUDA4 --paths "/index.html" "/service-worker.js" "/static/js/*" "/static/css/*"
+  only:
+    - main
+  when: manual
+  allow_failure: false
